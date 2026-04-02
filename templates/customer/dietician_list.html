@@ -1,0 +1,144 @@
+{% extends 'customer/common.html' %}
+{% block content %}
+
+<style>
+    .dietician-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .dietician-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease;
+    }
+
+    .dietician-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .dietician-img {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid green;
+    }
+
+    .dietician-info {
+        flex: 1;
+    }
+
+    .dietician-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 6px;
+    }
+
+    .chat-btn {
+        padding: 8px 16px;
+        background: green;
+        color: white;
+        text-decoration: none;
+        border-radius: 20px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .chat-btn:hover {
+        background: darkgreen;
+    }
+
+    .rating-section {
+        margin-top: 5px;
+    }
+
+    .stars {
+        color: #ffc107;
+        font-size: 16px;
+    }
+
+    .rating-text {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .rate-link {
+        font-size: 12px;
+        color: #007bff;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .rate-link:hover {
+        color: #0056b3;
+    }
+
+    @media (max-width: 600px) {
+        .dietician-card {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+
+<h2 style="text-align:center; margin-top:20px;">Available Dieticians</h2>
+
+<div class="dietician-container">
+    {% for d in dieticians %}
+        <div class="dietician-card">
+            <img src="{{ d.image.url }}" class="dietician-img">
+
+            <div class="dietician-info">
+                <div class="dietician-name">{{ d.full_name }}</div>
+                <div class="rating-section">
+                    <span class="stars">
+                        {% if d.average_rating >= 1 %}★{% else %}☆{% endif %}
+                        {% if d.average_rating >= 2 %}★{% else %}☆{% endif %}
+                        {% if d.average_rating >= 3 %}★{% else %}☆{% endif %}
+                        {% if d.average_rating >= 4 %}★{% else %}☆{% endif %}
+                        {% if d.average_rating >= 5 %}★{% else %}☆{% endif %}
+                    </span>
+                    <span class="rating-text">({{ d.average_rating }} / 5 - {{ d.total_ratings }} ratings)</span>
+                    <br>
+                    <span class="rate-link" onclick="rateDietician({{ d.id }})">Rate this Dietician</span>
+                </div>
+            </div>
+
+            <a href="{% url 'customer_chat' d.id %}" class="chat-btn">
+                Chat
+            </a>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+function rateDietician(dieticianId) {
+    var rating = prompt("Rate this Dietician (1-5 stars):");
+    if (rating >= 1 && rating <= 5) {
+        $.post("{% url 'rate_dietician' %}", {
+            dietician_id: dieticianId,
+            rating: rating,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, function(response) {
+            if (response.success) {
+                alert("Thanks for rating! New average: " + response.average);
+                location.reload();
+            } else {
+                alert(response.error);
+            }
+        });
+    } else if (rating !== null) {
+        alert("Please rate between 1-5 stars");
+    }
+}
+</script>
+
+{% endblock %}

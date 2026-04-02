@@ -1,0 +1,281 @@
+{% extends 'customer/common.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+.chatbot-container {
+    max-width: 750px;
+    margin: 40px auto;
+    padding: 0 20px;
+    font-family: 'Segoe UI', sans-serif;
+}
+.chatbot-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+.chat-header {
+    background: #2c3e50;
+    color: #fff;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.chat-header .bot-avatar {
+    width: 42px;
+    height: 42px;
+    background: #27ae60;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+.chat-header h4 {
+    margin: 0;
+    font-size: 18px;
+}
+.chat-header p {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.chat-messages {
+    height: 420px;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f8f9fa;
+}
+.message {
+    display: flex;
+    margin-bottom: 14px;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.message.bot { justify-content: flex-start; }
+.message.user { justify-content: flex-end; }
+
+.message .bubble {
+    max-width: 70%;
+    padding: 10px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.message.bot .bubble {
+    background: #e9ecef;
+    color: #2d3436;
+    border-bottom-left-radius: 4px;
+}
+.message.user .bubble {
+    background: #27ae60;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px;
+}
+.typing-indicator span {
+    width: 7px;
+    height: 7px;
+    background: #999;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+}
+
+.chat-input-area {
+    padding: 16px;
+    background: #fff;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+}
+.chat-input-area input {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 24px;
+    padding: 10px 18px;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.2s;
+}
+.chat-input-area input:focus {
+    border-color: #27ae60;
+}
+.chat-input-area button {
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 10px 24px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.chat-input-area button:hover {
+    background: #219a52;
+}
+.chat-input-area button:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.suggestions {
+    padding: 8px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: #fff;
+    border-top: 1px solid #eee;
+}
+.suggestions button {
+    background: #e8f5e9;
+    color: #27ae60;
+    border: 1px solid #c8e6c9;
+    border-radius: 16px;
+    padding: 4px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.suggestions button:hover {
+    background: #27ae60;
+    color: #fff;
+}
+</style>
+
+<div class="chatbot-container">
+    <div class="chatbot-card">
+        <div class="chat-header">
+            <div class="bot-avatar">&#127823;</div>
+            <div>
+                <h4>NutriScan ChatBot</h4>
+                <p>AI Nutrition Assistant</p>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="bubble">Hello! I'm your Nutriscan AI Assistant. Ask me about BMI, BMR, diet plans, or any nutrition-related questions!</div>
+            </div>
+        </div>
+
+        <div class="suggestions" id="suggestions">
+            <button onclick="useSuggestion(this)">What is BMI?</button>
+            <button onclick="useSuggestion(this)">How to stay healthy?</button>
+            <button onclick="useSuggestion(this)">Diet plans available</button>
+            <button onclick="useSuggestion(this)">Tips for weight loss</button>
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Type your message..." autofocus>
+            <button id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
+
+function addMessage(text, type) {
+    const div = document.createElement('div');
+    div.className = `message ${type}`;
+    div.innerHTML = `<div class="bubble">${text}</div>`;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showTyping() {
+    const div = document.createElement('div');
+    div.className = 'message bot';
+    div.id = 'typingIndicator';
+    div.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+}
+
+function sendMessage() {
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+
+    addMessage(msg, 'user');
+    chatInput.value = '';
+    chatInput.disabled = true;
+    sendBtn.disabled = true;
+
+    showTyping();
+
+    const formData = new FormData();
+    formData.append('message', msg);
+
+    fetch('{% url "chatbot_ajax" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: formData,
+    })
+    .then(res => {
+        if (!res.ok) {
+            return res.json().then(data => { throw new Error(data.error || `HTTP ${res.status}`); });
+        }
+        return res.json();
+    })
+    .then(data => {
+        removeTyping();
+        if (data && data.response) {
+            addMessage(data.response, 'bot');
+        } else {
+            addMessage('Sorry, something went wrong. Please try again.', 'bot');
+        }
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        chatInput.focus();
+    })
+    .catch(err => {
+        removeTyping();
+        addMessage('Error: ' + err.message, 'bot');
+        console.error('ChatBot error:', err);
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        chatInput.focus();
+    });
+}
+
+function useSuggestion(btn) {
+    chatInput.value = btn.textContent;
+    sendMessage();
+}
+
+chatInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+</script>
+
+{% endblock %}
