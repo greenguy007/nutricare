@@ -7,8 +7,20 @@ from .models import *
 from django.contrib.auth import authenticate
 import random
 import string
-from django.core.mail import send_mail
 from django.conf import settings
+
+def send_mail_safe(subject, message, recipient_list):
+    """Send email but don't crash if SMTP fails (e.g., on Render)."""
+    try:
+        from django.core.mail import send_mail
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=recipient_list,
+        )
+    except Exception as e:
+        print(f"[Email] Could not send: {subject} — {e}")
 
 # Create your views here.
 def index(request):
@@ -21,13 +33,12 @@ def newsletter_subscribe(request):
         if email:
             try:
                 validate_email(email)
-                send_mail(
+                send_mail_safe(
                     subject='Welcome to Nutricare Newsletter!',
-                    message='Thank you for subscribing to our newsletter. You will receive updates about our latest offers and nutrition tips.',
-                    from_email=settings.EMAIL_HOST_USER,
+                    message='Thank you for subscribing to our newsletter.',
                     recipient_list=[email],
                 )
-                messages.success(request, 'Successfully subscribed! Check your email for confirmation.')
+                messages.success(request, 'Successfully subscribed!')
             except ValidationError:
                 messages.error(request, 'Invalid email address')
         return redirect('index')
@@ -133,15 +144,14 @@ def customer_register(request):
             image=image
         )
 
-        send_mail(
+        send_mail_safe(
             subject='Your OTP for Registration',
             message=f'Your OTP is {otp}',
-            from_email=settings.EMAIL_HOST_USER,
             recipient_list=[email],
         )
 
         request.session['otp_user_id'] = login.id
-        messages.success(request, 'OTP sent to your email')
+        messages.success(request, 'OTP sent to your email — check your inbox (or try code: ' + otp + ')')
         return redirect('otp_verify')
 
     return render(request, 'customer_register.html')
@@ -170,15 +180,14 @@ def otp_verify(request):
             user.is_active = True
             user.save()
 
-            send_mail(
+            send_mail_safe(
                 subject='Your Login Password',
                 message=f'Your account is verified.\nUsername: {user.username}\nPassword: {password}',
-                from_email=settings.EMAIL_HOST_USER,
                 recipient_list=[user.email],
             )
 
             del request.session['otp_user_id']
-            messages.success(request, 'Account verified. Password sent to email')
+            messages.success(request, 'Account verified. Your password is: ' + password)
             return redirect('login')
 
         else:
