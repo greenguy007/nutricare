@@ -2,9 +2,10 @@
 {% load static %}
 {% block content %}
 
+
 <div id="rev_slider_4_1_wrapper" class="rev_slider_wrapper fullwidthbanner-container slide-overlay" data-alias="classic4export" data-source="gallery">
             <!-- START REVOLUTION SLIDER 5.4.8 auto mode -->
-
+        
             <div id="rev_slider_4_1" class="rev_slider fullwidthabanner" data-version="5.4.8.1">
                 
                 <ul>
@@ -157,7 +158,7 @@
                         data-paddingright="[35,35,30,30]"
                         data-paddingbottom="[15,15,12,12]"
                         data-paddingleft="[35,35,30,30]"
-                        >Conatct Us </a>
+                        >Contact Us </a>
                     </li>
 
                     <li data-index="rs-12" data-transition="slotslide-horizontal" data-slotamount="default" data-hideafterloop="0" data-hideslideonmobile="off" data-easein="default" data-easeout="default" data-masterspeed="default" data-thumb="" data-rotate="0" data-saveperformance="off" data-title="Slide" data-param1="" data-param2="" data-param3="" data-param4="" data-param5="" data-param6="" data-param7="" data-param8="" data-param9="" data-param10="" data-description="">
@@ -288,7 +289,7 @@
                         data-paddingright="[35,35,30,30]"
                         data-paddingbottom="[15,15,12,12]"
                         data-paddingleft="[35,35,30,30]"
-                        >Conatct Us </a>
+                        >Contact Us </a>
 
                         <a class="tp-caption button black-button tp-resizeme" href="#" target="_self" id="slide-2-layer-8" data-x="['center','center','center','center']" data-hoffset="['228','148','0','0']" data-y="['top','top','middle','middle']" data-voffset="['451','451','117','106']"
                             
@@ -436,7 +437,7 @@
                             data-paddingright="[35,35,30,30]"
                             data-paddingbottom="[15,15,12,12]"
                             data-paddingleft="[35,35,30,30]"
-                            >Conatct Us</a>
+                            >Contact Us</a>
 
                         <a class="tp-caption button black-button tp-resizeme" href="#" target="_self" id="slide-3-layer-8" data-x="['left','left','center','center']" data-hoffset="['218','218','0','0']" data-y="['top','top','middle','middle']" data-voffset="['485','485','117','106']"
                             
@@ -598,12 +599,18 @@
                         </div>
                     </div>
                     <div class="col-lg-6 col-sm-12">
-                        <!-- ttm_single_image-wrapper -->
-                        <div class="ttm_single_image-wrapper res-991-mt-50">
-                            <div class="text-right ml-30 res-991-ml-0 ">
-                                <img width="524" height="480" class="img-fluid" src="{% static "images/single-img-one.png" %}" alt="">
+                        <!-- Image Collage -->
+                        <div class="collage-wrapper" style="position:relative;display:flex;flex-wrap:wrap;gap:15px;justify-content:center;margin-top:40px;">
+                            <div class="collage-img" style="flex:1;min-width:180px;max-width:250px;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.15);transition:all 0.4s ease;">
+                                <img src="{% static "images/single-img-one.png" %}" alt="Nutrition Image 1" style="width:100%;height:250px;object-fit:cover;border-radius:20px;display:block;transition:transform 0.4s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                             </div>
-                        </div><!-- ttm_single_image-wrapper end -->
+                            <div class="collage-img" style="flex:1;min-width:180px;max-width:250px;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.15);transition:all 0.4s ease;">
+                                <img src="{% static "images/single-img-two.jpg" %}" alt="Nutrition Image 2" style="width:100%;height:250px;object-fit:cover;border-radius:20px;display:block;transition:transform 0.4s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            </div>
+                            <div class="collage-img" style="flex:1;min-width:180px;max-width:250px;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.15);transition:all 0.4s ease;">
+                                <img src="{% static "images/single-img-three.jpg" %}" alt="Nutrition Image 3" style="width:100%;height:250px;object-fit:cover;border-radius:20px;display:block;transition:transform 0.4s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                            </div>
+                        </div>
                         <!-- ttm-fid -->
                         <div class="ttm-fid inside ttm-fid-without-icon ttm-highlight-fid ttm-textcolor-white">
                             <h4 class="ttm-fid-inner mb-0">

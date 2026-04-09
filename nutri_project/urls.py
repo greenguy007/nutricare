@@ -15,12 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, re_path
-from django.views.static import serve
+from django.urls import path
 from nutri_app import views
 from django.conf import settings
-
-handler404 = views.error_404
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -37,7 +35,6 @@ urlpatterns = [
     path('dietician_dashboard/', views.dietician_dashboard, name='dietician_dashboard'),
 
     path('view_customers/', views.view_all_customers, name='view_all_customers'),
-    path('verify_customer/<int:id>/', views.verify_customer, name='verify_customer'),
     path('delete_customer/<int:id>/', views.delete_customer, name='delete_customer'),
 
     path('view_all_dieticians/', views.view_all_dieticians, name='view_all_dieticians'),
@@ -70,7 +67,8 @@ urlpatterns = [
     path('edit_dietician_profile/', views.edit_dietician_profile, name='edit_dietician_profile'),
 
     path('add_bmi/', views.add_bmi, name='add_bmi'),
-    path('calculate_bmr/', views.calculate_bmr, name='calculate_bmr'),
+    path('add_smr/', views.add_smr, name='add_smr'),
+
     path('upload_diet_plan_pdf/', views.upload_diet_plan_pdf, name='upload_diet_plan_pdf'),
     path('view_diet_plan_pdfs/', views.view_diet_plan_pdfs, name='view_diet_plan_pdfs'),
     path('customer_view_diet_plan_pdfs/', views.customer_view_diet_plan_pdfs, name='customer_view_diet_plan_pdfs'),
@@ -78,7 +76,9 @@ urlpatterns = [
     path('dietician_edit_pdf/<int:pdf_id>/', views.dietician_edit_pdf, name='dietician_edit_pdf'),
     path('dietician_delete_pdf/<int:pdf_id>/', views.dietician_delete_pdf, name='dietician_delete_pdf'),
 
-    path('ChatBot/',views.ChatBot,name='ChatBot'),
+    path('chatbot/', views.chatbot_web, name='ChatBot'),
+    path('chatbot_ajax/', views.chatbot_ajax, name='chatbot_ajax'),
+    path('logout/', views.logout_view, name='logout'),
 
     path('add_food/', views.add_food, name='add_food'),
     path('view_foods/', views.view_foods, name='view_foods'),
@@ -118,6 +118,7 @@ urlpatterns = [
 
     path('payment/<int:plan_id>/<str:action>/', views.payment_page, name='payment_page'),
     path('add_feedback/<int:plan_id>/', views.add_feedback, name='add_feedback'),
+    path('calculate_bmr/', views.calculate_bmr, name='calculate_bmr'),
 
         # View all workout plans (customer)
     path('workouts/', views.view_workout_customer, name='view_workout_customer'),
@@ -128,10 +129,10 @@ urlpatterns = [
     # Payment page
     path('workout-payment/<int:plan_id>/', views.workout_payment, name='workout_payment'),
     path('admin_feedbacks/', views.admin_feedbacks, name='admin_feedbacks'),
-    path('newsletter/', views.newsletter_subscribe, name='newsletter_subscribe'),
+    path('newsletter_subscribe/', views.newsletter_subscribe, name='newsletter_subscribe'),
+    path('rate_dietician/', views.rate_dietician, name='rate_dietician'),
+    path('get_dietician_rating/<int:dietician_id>/', views.get_dietician_rating, name='get_dietician_rating'),
 
 ]
-urlpatterns += [
-    re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.BASE_DIR / 'static'}),
-    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
-]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

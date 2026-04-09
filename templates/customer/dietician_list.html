@@ -56,6 +56,31 @@
         background: darkgreen;
     }
 
+    .rating-section {
+        margin-top: 5px;
+    }
+
+    .stars {
+        color: #ffc107;
+        font-size: 16px;
+    }
+
+    .rating-text {
+        font-size: 12px;
+        color: #666;
+    }
+
+    .rate-link {
+        font-size: 12px;
+        color: #007bff;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .rate-link:hover {
+        color: #0056b3;
+    }
+
     @media (max-width: 600px) {
         .dietician-card {
             flex-direction: column;
@@ -73,6 +98,18 @@
 
             <div class="dietician-info">
                 <div class="dietician-name">{{ d.full_name }}</div>
+                <div class="rating-section">
+                    <span class="stars">
+                        {% if d.average_rating >= 1 %}★{% else %}☆{% endif %}
+                        {% if d.average_rating >= 2 %}★{% else %}☆{% endif %}
+                        {% if d.average_rating >= 3 %}★{% else %}☆{% endif %}
+                        {% if d.average_rating >= 4 %}★{% else %}☆{% endif %}
+                        {% if d.average_rating >= 5 %}★{% else %}☆{% endif %}
+                    </span>
+                    <span class="rating-text">({{ d.average_rating }} / 5 - {{ d.total_ratings }} ratings)</span>
+                    <br>
+                    <span class="rate-link" onclick="rateDietician({{ d.id }})">Rate this Dietician</span>
+                </div>
             </div>
 
             <a href="{% url 'customer_chat' d.id %}" class="chat-btn">
@@ -81,5 +118,27 @@
         </div>
     {% endfor %}
 </div>
+
+<script>
+function rateDietician(dieticianId) {
+    var rating = prompt("Rate this Dietician (1-5 stars):");
+    if (rating >= 1 && rating <= 5) {
+        $.post("{% url 'rate_dietician' %}", {
+            dietician_id: dieticianId,
+            rating: rating,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        }, function(response) {
+            if (response.success) {
+                alert("Thanks for rating! New average: " + response.average);
+                location.reload();
+            } else {
+                alert(response.error);
+            }
+        });
+    } else if (rating !== null) {
+        alert("Please rate between 1-5 stars");
+    }
+}
+</script>
 
 {% endblock %}

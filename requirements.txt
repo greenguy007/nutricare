@@ -1,0 +1,9 @@
+Django==5.2.12
+tensorflow==2.21.0
+tf_keras==2.21.0
+nltk==3.9.4
+numpy==2.4.4
+Pillow
+h5py==3.14.0
+gunicorn
+whitenoise

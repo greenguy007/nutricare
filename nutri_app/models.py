@@ -25,6 +25,8 @@ class Dietician(models.Model):
     email = models.EmailField(unique=True)
     image = models.ImageField(upload_to='dietician/')
     license_file = models.FileField(upload_to='dietician/license/', null=True, blank=True)
+    average_rating = models.FloatField(default=0)
+    total_ratings = models.IntegerField(default=0)
 
 class DietPlan(models.Model):
     PLAN_TYPE = (
@@ -76,6 +78,13 @@ class CustomerBMR(models.Model):
     height_cm = models.FloatField()
     weight_kg = models.FloatField()
     bmr = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class CustomerSMR(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    smr_value = models.FloatField()
+    notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -184,3 +193,12 @@ class WorkoutFeedback(models.Model):
     rating = models.IntegerField()  # 1 to 5
     comment = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+class DieticianRating(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    dietician = models.ForeignKey(Dietician, on_delete=models.CASCADE)
+    rating = models.IntegerField()  # 1 to 5
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('customer', 'dietician')

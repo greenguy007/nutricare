@@ -184,7 +184,6 @@
                                     <img id="logo-img" class="img-center" src="{% static "images/logo-img.png" %}" alt="logo-img">
                                 </a>
                             </div><!-- site-branding end -->
-                        </div>
                     </div>
                     <div class="row">
                         <div class="col-lg-12">
@@ -234,10 +233,32 @@
                                                         
                                                         <li ><a href="{% url 'admin_feedbacks' %}">Feedbacks</a></li>
                                                         
-                                                        <li><a href="{% url 'index' %}">Logout</a></li>
+                                                        <li><a href="{% url 'logout' %}">Logout</a></li>
 
                                                     </ul>
                                                 </nav>
+                                                <div class="ttm-rt-contact">
+                                                    <div class="ttm-header-icons ">
+                                                        <div class="ttm-header-icon ttm-header-search-link">
+                                                            <a href="#" class="sclose"><i class="ti ti-search"></i></a>
+                                                            <div class="ttm-search-overlay">
+                                                                <div class="ttm-bg-layer"></div>
+                                                                <div class="ttm-icon-close"></div>
+                                                                <div class="ttm-search-outer">
+                                                                    <form method="get" class="ttm-site-searchform" action="#">
+                                                                        <input type="search" class="field searchform-s" name="s" placeholder="Type Word Then Enter...">
+                                                                        <button type="submit">
+                                                                            <i class="ti ti-search"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="ttm-header-icon">
+                                                            <a href="#" id="dark-mode-toggle" onclick="toggleDarkMode()"><i class="ti ti-moon"></i></a>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div><!-- site-navigation end-->
                                         </div>
                                     </div>
@@ -307,12 +328,12 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-xs-12 col-sm-12 col-md-6 col-lg-3 widget-area">
+                    <div class="col-xs-12 col-sm-12 col-md-6 col-lg-5 widget-area">
                         <div class="widget clearfix">
                            <div class="ttm-newsletter-box">
                                <h3 class="widget-title">Newsletter</h3>
                                <p>Sign up to get exclusive offers from our favorite brands and to be well up in the news.</p>
-                               <form action="{% url 'newsletter_subscribe' %}" method="post">
+                               <form class="mc4wp-form mc4wp-form-24" method="post" action="{% url 'newsletter_subscribe' %}" data-id="24" data-name="Newsletter Form">
                                     {% csrf_token %}
                                     <div class="mc4wp-form-fields">
                                         <div class="mailchimp-inputbox">
@@ -320,20 +341,24 @@
                                             <input type="submit" value="Subscribe">
                                         </div>
                                     </div>
+                                    <div class="mc4wp-response"></div>
                                 </form>
                            </div>
                         </div>
                     </div>
-                    <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 widget-area">
-                        <div class="widget clearfix">
-                            <h3 class="widget-title">Gallery</h3>
-                            <div class="food-grid-footer" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                                <img src="{% static 'images/food/l.jpeg' %}" alt="food" style="width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer;transition:all .3s ease;" onmouseover="this.style.transform='scale(1.06)';this.style.boxShadow='0 6px 20px rgba(0,255,100,.4)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'">
-                                <img src="{% static 'images/food/whatsapp1.jpeg' %}" alt="food" style="width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer;transition:all .3s ease;" onmouseover="this.style.transform='scale(1.06)';this.style.boxShadow='0 6px 20px rgba(0,255,100,.4)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'">
-                                <img src="{% static 'images/food/whatsapp2.jpeg' %}" alt="food" style="width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer;transition:all .3s ease;" onmouseover="this.style.transform='scale(1.06)';this.style.boxShadow='0 6px 20px rgba(0,255,100,.4)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'">
-                                <img src="{% static 'images/food/whatsapp3.jpeg' %}" alt="food" style="width:100%;height:150px;object-fit:cover;border-radius:12px;cursor:pointer;transition:all .3s ease;" onmouseover="this.style.transform='scale(1.06)';this.style.boxShadow='0 6px 20px rgba(0,255,100,.4)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none'">
-                            </div>
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-4 widget-area">
+                        <div class="footer-collage" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;max-width:350px;margin:0 auto;place-items:center;">
+                            <img src="{% static "images/footer/l.jpeg" %}" alt="" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.2);transition:all 0.3s ease;">
+                            <img src="{% static "images/footer/WhatsApp Image 2026-04-02 at 12.16.27 PM.jpeg" %}" alt="" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.2);transition:all 0.3s ease;">
+                            <img src="{% static "images/footer/WhatsApp Image 2026-04-02 at 12.16.28 PM.jpeg" %}" alt="" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.2);transition:all 0.3s ease;">
+                            <img src="{% static "images/footer/WhatsApp Image 2026-04-02 at 12.16.29 PM.jpeg" %}" alt="" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:15px;box-shadow:0 5px 15px rgba(0,0,0,0.2);transition:all 0.3s ease;">
                         </div>
+                        <style>
+                        .footer-collage img:hover {
+                            transform: scale(1.05);
+                            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                        }
+                        </style>
                     </div>
                 </div>
             </div>
@@ -376,7 +401,7 @@
     <script src="{% static "js/jquery-validate.js" %}"></script> 
     <script src="{% static "js/owl.carousel.js" %}"></script>
     <script src="{% static "js/jquery.prettyPhoto.js" %}"></script>
-    <script src="{% static "js/numinate.min6959.js" %}?ver=4.9.3"></script>
+    <script src="{% static "js/numinate.min6959.js?ver=4.9.3" %}"></script>
     <script src="{% static "js/main.js" %}"></script>
 
     <!-- Revolution Slider -->
@@ -396,6 +421,60 @@
     <script src="{% static "revolution/js/extensions/revolution.extension.slideanims.min.js" %}"></script>
 
     <!-- Javascript end-->
+
+    <!-- Dark Mode Script -->
+    <script>
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        updateIcon();
+    }
+    function updateIcon() {
+        var icon = document.querySelector('#dark-mode-toggle i');
+        if (document.body.classList.contains('dark-mode')) {
+            icon.className = 'ti ti-sun';
+        } else {
+            icon.className = 'ti ti-moon';
+        }
+    }
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+    }
+    </script>
+
+    <style>
+    body.dark-mode {
+        background-color: #1a1a2e !important;
+        color: #e0e0e0 !important;
+    }
+    body.dark-mode .ttm-bgcolor-white,
+    body.dark-mode .ttm-bgcolor-grey,
+    body.dark-mode .col-md-8,
+    body.dark-mode .featured-icon-box,
+    body.dark-mode .widget {
+        background-color: #16213e !important;
+        color: #e0e0e0 !important;
+    }
+    body.dark-mode .ttm-bgcolor-dark,
+    body.dark-mode .footer,
+    body.dark-mode .ttm-textcolor-white {
+        background-color: #0f0f23 !important;
+        color: #e0e0e0 !important;
+    }
+    body.dark-mode h1, body.dark-mode h2, body.dark-mode h3,
+    body.dark-mode h4, body.dark-mode h5, body.dark-mode h6,
+    body.dark-mode p, body.dark-mode li, body.dark-mode span {
+        color: #e0e0e0 !important;
+    }
+    body.dark-mode a {
+        color: #00d2ff !important;
+    }
+    body.dark-mode input, body.dark-mode textarea, body.dark-mode select {
+        background-color: #1a1a2e !important;
+        color: #e0e0e0 !important;
+        border-color: #333 !important;
+    }
+    </style>
 
 </body>
 

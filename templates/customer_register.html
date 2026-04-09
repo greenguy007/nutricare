@@ -1,10 +1,6 @@
 {% extends 'common.html' %}
 {% load static %}
 {% block content %}
-<style>
-    .title-box .page-title-heading h1 { font-size: 30px !important; line-height: 40px !important; }
-    h3.font-18 { font-size: 16px !important; }
-</style>
 
 <!-- page-title -->
 <div class="ttm-page-title-row">
@@ -14,7 +10,7 @@
             <div class="col-md-12 text-center"> 
                 <div class="title-box ttm-textcolor-white">
                     <div class="page-title-heading ttm-textcolor-white">
-                        <h1 class="title">Customer Registration</h1>
+                        <h2 class="title" style="font-size:28px;">Customer Registration</h2>
                     </div>
                     <div class="breadcrumb-wrapper">
                         <span>
@@ -74,7 +70,7 @@
             <div class="row">
                 <div class="col-md-8">
                     <div class="pt-50">
-                        <h3 class="font-18">Customer Account Registration</h3>
+                        <h3 class="font-23">Customer Account Registration</h3>
                         <p>Please fill in the details below to create your customer account.</p>
                     </div>
                 </div>
@@ -119,7 +115,7 @@
                                     <div class="col-lg-12">
                                         <label>
                                             <span class="text-input">
-                                                <input type="tel" name="phone" id="phone" placeholder="Phone" required pattern="[0-9]{10}" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')" title="Enter 10 digit phone number" required>
+                                                <input type="tel" name="phone" placeholder="Phone (10 digits)" pattern="[0-9]{10}" maxlength="10" required>
                                             </span>
                                         </label>
                                     </div>

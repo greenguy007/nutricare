@@ -1,38 +1,19 @@
-# Python
 __pycache__/
+*.pyc
+*.pyo
 *.py[cod]
-*$py.class
-*.so
-.env
-.venv
-env/
+*.sqlite3
+*.egg-info/
+dist/
+build/
+.venv/
 venv/
-ENV/
-
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-/media
-/staticfiles
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# ML Model files (optional - large)
+env/
 *.h5
 *.pkl
-
-# Windows reserved filenames
-nul
-prn
-aux
-con
+*.log
+.DS_Store
+node_modules/
+media/
+staticfiles/
+.env

@@ -310,6 +310,9 @@ jQuery('a[data-gal^="prettyPhoto"]').prettyPhoto();
 jQuery("a[data-gal^='prettyPhoto']").prettyPhoto({hook: 'data-gal'})
 
 });
+$(document).ready(function() {
+}); 
+    
 
 /*------------------------------------------------------------------------------*/
 /* owlCarousel

@@ -2,20 +2,95 @@ from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib import messages
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 from .models import *
 from django.contrib.auth import authenticate
 import random
-from django.core.mail import send_mail
+import string
 from django.conf import settings
+
+def send_mail_safe(subject, message, recipient_list):
+    """Send email but don't crash if SMTP fails (e.g., on Render)."""
+    try:
+        from django.core.mail import send_mail
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=recipient_list,
+        )
+    except Exception as e:
+        print(f"[Email] Could not send: {subject} — {e}")
 
 # Create your views here.
 def index(request):
     return render(request, 'index.html')
 
-# def adm(request):
-#     adm=Login.objects.create_superuser(username='admin',email='admin@gmail.com',viewpassword='admin',password='admin',usertype='admin')
-#     adm.save()
-#     return redirect('/')
+
+def newsletter_subscribe(request):
+    if request.method == 'POST':
+        email = request.POST.get('EMAIL')
+        if email:
+            try:
+                validate_email(email)
+                send_mail_safe(
+                    subject='Welcome to Nutricare Newsletter!',
+                    message='Thank you for subscribing to our newsletter.',
+                    recipient_list=[email],
+                )
+                messages.success(request, 'Successfully subscribed!')
+            except ValidationError:
+                messages.error(request, 'Invalid email address')
+        return redirect('index')
+    return redirect('index')
+
+
+def rate_dietician(request):
+    if request.method == 'POST':
+        if request.session.get('usertype') != 'customer':
+            return JsonResponse({'error': 'Only customers can rate'}, status=403)
+
+        dietician_id = request.POST.get('dietician_id')
+        rating = request.POST.get('rating')
+
+        try:
+            dietician = Dietician.objects.get(id=dietician_id)
+            customer = Customer.objects.get(login_id=request.session['login_id'])
+
+            # Check if already rated
+            existing = DieticianRating.objects.filter(customer=customer, dietician=dietician).first()
+            if existing:
+                return JsonResponse({'error': 'You have already rated this dietician'}, status=400)
+
+            DieticianRating.objects.create(
+                customer=customer,
+                dietician=dietician,
+                rating=int(rating)
+            )
+
+            # Update average
+            all_ratings = DieticianRating.objects.filter(dietician=dietician)
+            avg = sum(r.rating for r in all_ratings) / len(all_ratings)
+            dietician.average_rating = round(avg, 1)
+            dietician.total_ratings = len(all_ratings)
+            dietician.save()
+
+            return JsonResponse({'success': True, 'average': avg, 'total': len(all_ratings)})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+def get_dietician_rating(request, dietician_id):
+    try:
+        dietician = Dietician.objects.get(id=dietician_id)
+        return JsonResponse({
+            'average': dietician.average_rating,
+            'total': dietician.total_ratings
+        })
+    except:
+        return JsonResponse({'average': 0, 'total': 0})
 
 
 def customer_register(request):
@@ -33,6 +108,10 @@ def customer_register(request):
 
         if Customer.objects.filter(phone=phone).exists():
             messages.error(request, 'Phone already exists')
+            return redirect('customer_register')
+
+        if not phone.isdigit() or len(phone) != 10:
+            messages.error(request, 'Phone must be exactly 10 digits')
             return redirect('customer_register')
 
         if Customer.objects.filter(email=email).exists():
@@ -65,15 +144,14 @@ def customer_register(request):
             image=image
         )
 
-        send_mail(
+        send_mail_safe(
             subject='Your OTP for Registration',
             message=f'Your OTP is {otp}',
-            from_email=settings.EMAIL_HOST_USER,
             recipient_list=[email],
         )
 
         request.session['otp_user_id'] = login.id
-        messages.success(request, 'OTP sent to your email')
+        messages.success(request, 'OTP sent to your email — check your inbox (or try code: ' + otp + ')')
         return redirect('otp_verify')
 
     return render(request, 'customer_register.html')
@@ -90,53 +168,30 @@ def otp_verify(request):
     user = Login.objects.get(id=user_id)
 
     if request.method == 'POST':
-        action = request.POST.get('action')
-        
-        if action == 'resend':
-            otp = str(random.randint(100000, 999999))
-            user.otp = otp
+        otp = request.POST.get('otp')
+
+        if user.otp == otp:
+            password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+            user.set_password(password)
+            user.viewpassword = password
+            user.otp = None
+            user.is_verified = True
+            user.is_active = True
             user.save()
-            
-            try:
-                send_mail(
-                    subject='Your OTP for Registration',
-                    message=f'Your OTP is {otp}',
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=[user.email],
-                )
-                messages.success(request, 'New OTP sent to your email')
-            except Exception as e:
-                messages.error(request, f'Failed to send OTP: {str(e)}')
+
+            send_mail_safe(
+                subject='Your Login Password',
+                message=f'Your account is verified.\nUsername: {user.username}\nPassword: {password}',
+                recipient_list=[user.email],
+            )
+
+            del request.session['otp_user_id']
+            messages.success(request, 'Account verified. Your password is: ' + password)
+            return redirect('login')
+
         else:
-            otp = request.POST.get('otp')
-
-            if user.otp == otp:
-                password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-
-                user.set_password(password)
-                user.viewpassword = password
-                user.otp = None
-                user.is_verified = True
-                user.is_active = True
-                user.save()
-
-                try:
-                    send_mail(
-                        subject='Your Login Password',
-                        message=f'Your account is verified.\nUsername: {user.username}\nPassword: {password}',
-                        from_email=settings.EMAIL_HOST_USER,
-                        recipient_list=[user.email],
-                    )
-                except Exception as e:
-                    user.save()
-                    print(f"Email send failed: {e}")
-
-                del request.session['otp_user_id']
-                messages.success(request, 'Account verified. Password sent to email')
-                return redirect('login')
-
-            else:
-                messages.error(request, 'Invalid OTP')
+            messages.error(request, 'Invalid OTP')
 
     return render(request, 'otp.html')
 
@@ -168,14 +223,11 @@ def dietician_register(request):
             messages.error(request, 'Phone must be 10 digits')
             return redirect('dietician_register')
 
-        if not (email.endswith('@gmail.com') or email.endswith('@gmail.in')):
-            messages.error(request, 'Email must be gmail.com or gmail.in')
+        try:
+            validate_email(email)
+        except ValidationError:
+            messages.error(request, 'Invalid email address')
             return redirect('dietician_register')
-        
-        # if license_file and not license_file.name.endswith('.pdf'):
-        #     messages.error(request, 'License must be a PDF file')
-        #     return redirect('dietician_register')
-        
 
         login = Login.objects.create_user(
             username=username,
@@ -253,82 +305,12 @@ def view_all_customers(request):
     return render(request, 'admin/view_all_customers.html', {'customers': customers})
 
 
-def verify_customer(request, id):
+def delete_customer(request, id):
     customer = Customer.objects.get(id=id)
     login = customer.login
-    import string
-    password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-    login.set_password(password)
-    login.viewpassword = password
-    login.is_verified = True
-    login.is_active = True
-    login.otp = None
-    login.save()
-    try:
-        send_mail(
-            subject='Your Login Password',
-            message=f'Your account is verified.\nUsername: {login.username}\nPassword: {password}',
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[login.email],
-        )
-    except:
-        pass
-    messages.success(request, 'Customer verified. Password sent to email')
-    return redirect('view_all_customers')
-
-
-def delete_customer(request, id):
-    from django.db import connection
-    try:
-        customer = Customer.objects.get(id=id)
-    except Customer.DoesNotExist:
-        messages.error(request, 'Customer not found')
-        return redirect('view_all_customers')
-    
-    login = customer.login
-    try:
-        cursor = connection.cursor()
-        cursor.execute("PRAGMA foreign_keys = OFF")
-        
-        Chat.objects.filter(sender=login).delete()
-        Chat.objects.filter(receiver=login).delete()
-        CustomerDietPlan.objects.filter(customer=customer).delete()
-        CustomerDietStep.objects.filter(customer_diet_plan__customer=customer).delete()
-        CustomerBMI.objects.filter(customer=customer).delete()
-        CustomerBMR.objects.filter(customer=customer).delete()
-        CustomerMeal.objects.filter(customer=customer).delete()
-        DietFeedback.objects.filter(customer=customer).delete()
-        DietCustomizationRequest.objects.filter(customer=customer).delete()
-        CustomDietPlan.objects.filter(customer=customer).delete()
-        CustomDietStep.objects.filter(custom_plan__customer=customer).delete()
-        WorkoutFeedback.objects.filter(customer=customer).delete()
-        WorkoutPurchase.objects.filter(customer=customer).delete()
-        
-        diet_plans = DietPlan.objects.filter(dietician=login)
-        for dp in diet_plans:
-            DietStep.objects.filter(diet_plan=dp).delete()
-            CustomerDietPlan.objects.filter(diet_plan=dp).delete()
-            DietFeedback.objects.filter(diet_plan=dp).delete()
-            DietCustomizationRequest.objects.filter(diet_plan=dp).delete()
-            dp.delete()
-        
-        DietPlanPDF.objects.filter(dietician=login).delete()
-        Food.objects.filter(dietician=login).delete()
-        
-        customer.delete()
-        login.delete()
-        
-        cursor.execute("PRAGMA foreign_keys = ON")
-        cursor.close()
-        
-        messages.success(request, 'Customer deleted successfully')
-    except Exception as e:
-        try:
-            cursor.execute("PRAGMA foreign_keys = ON")
-            cursor.close()
-        except:
-            pass
-        messages.error(request, f'Error deleting customer: {str(e)}')
+    customer.delete()
+    login.delete()
+    messages.success(request, 'Customer deleted successfully')
     return redirect('view_all_customers')
 
 
@@ -667,7 +649,9 @@ def view_joined_diets(request):
         return redirect('login')
 
     customer = Customer.objects.get(login_id=request.session['login_id'])
-    joined_plans = CustomerDietPlan.objects.filter(customer=customer)
+    joined_plans = CustomerDietPlan.objects.filter(customer=customer).prefetch_related(
+        models.Prefetch('customerdietstep_set', queryset=CustomerDietStep.objects.select_related('diet_step'))
+    )
 
     data = []
 
@@ -733,12 +717,12 @@ def joined_customers_diet_plans(request):
 
     dietician_id = request.session['login_id']
 
-    plans = DietPlan.objects.filter(dietician_id=dietician_id)
+    plans = DietPlan.objects.filter(dietician_id=dietician_id).prefetch_related('steps')
 
     data = []
 
     for plan in plans:
-        joined_customers = CustomerDietPlan.objects.filter(diet_plan=plan)
+        joined_customers = CustomerDietPlan.objects.filter(diet_plan=plan).select_related('customer')
 
         for jc in joined_customers:
             total_steps = plan.steps.count()
@@ -866,8 +850,16 @@ def add_bmi(request):
     bmi_value = None
 
     if request.method == 'POST':
-        height_cm = float(request.POST.get('height_cm'))
-        weight_kg = float(request.POST.get('weight_kg'))
+        try:
+            height_cm = float(request.POST.get('height_cm'))
+            weight_kg = float(request.POST.get('weight_kg'))
+        except (TypeError, ValueError):
+            messages.error(request, 'Please enter valid numbers for height and weight')
+            return render(request, 'customer/add_bmi.html', {'bmi_status': None, 'bmi_value': None})
+
+        if height_cm <= 0 or weight_kg <= 0:
+            messages.error(request, 'Height and weight must be positive values')
+            return render(request, 'customer/add_bmi.html', {'bmi_status': None, 'bmi_value': None})
 
         height_m = height_cm / 100
         bmi_value = round(weight_kg / (height_m ** 2), 2)
@@ -891,6 +883,38 @@ def add_bmi(request):
         )
 
     return render(request, 'customer/add_bmi.html', {'bmi_status': bmi_status, 'bmi_value': bmi_value})
+
+
+
+def add_smr(request):
+    if request.session.get('usertype') != 'customer':
+        return redirect('login')
+
+    customer = Customer.objects.get(login_id=request.session['login_id'])
+    smr_status = None
+    smr_value = None
+
+    if request.method == 'POST':
+        smr_value = float(request.POST.get('smr_value'))
+        notes = request.POST.get('notes')
+
+        # Example SMR evaluation (you can adjust your own scale)
+        if smr_value < 40:
+            smr_status = "Poor"
+        elif smr_value < 60:
+            smr_status = "Average"
+        elif smr_value < 80:
+            smr_status = "Good"
+        else:
+            smr_status = "Excellent"
+
+        CustomerSMR.objects.create(
+            customer=customer,
+            smr_value=smr_value,
+            notes=notes
+        )
+
+    return render(request, 'customer/add_smr.html', {'smr_status': smr_status, 'smr_value': smr_value})
 
 
 def upload_diet_plan_pdf(request):
@@ -963,13 +987,6 @@ def dietician_delete_pdf(request, pdf_id):
     pdf.delete()
     return redirect('view_diet_plan_pdfs')
 
-
-
-def ChatBot(request):
-    import os
-    os.system("python chatgui.py")  # Runs the Python file
-    print("hello world hiiii")
-    return redirect("customer_dashboard")
 
 
 def add_food(request):
@@ -1102,30 +1119,8 @@ def display_all_food(request):
     if request.session.get('usertype') != 'admin':
         return redirect('login')
 
-    foods = Food.objects.all().order_by('meal_type')  # you can also order by dietician or date
+    foods = Food.objects.all().order_by('meal_type')
     return render(request, 'admin/display_all_food.html', {'foods': foods})
-
-# import requests
-# from django.shortcuts import render
-
-# def system_ip_location(request):
-
-#     # Get PUBLIC IP of system
-#     public_ip = requests.get('https://api.ipify.org').text
-
-#     response = requests.get(f"http://ip-api.com/json/{public_ip}")
-#     data = response.json()
-
-#     context = {
-#         'ip': public_ip,
-#         'country': data.get('country'),
-#         'region': data.get('regionName'),
-#         'city': data.get('city'),
-#         'isp': data.get('isp'),
-#     }
-
-#     return render(request, 'ip_location.html', context)
-
 
 
 def customer_dietician_list(request):
@@ -1351,26 +1346,6 @@ def workout_detail(request, plan_id):
 
     steps = WorkoutStep.objects.filter(plan=plan)
 
-    return render(request, 'customer/workout_detail.html', {
-        'plan': plan,
-        'steps': steps
-    })
-
-def workout_detail(request, plan_id):
-    if 'login_id' not in request.session:
-        return redirect('login')
-
-    customer = Customer.objects.get(login_id=request.session['login_id'])
-    plan = WorkoutPlan.objects.get(id=plan_id)
-
-    # check purchase
-    if not plan.is_free:
-        if not WorkoutPurchase.objects.filter(customer=customer, plan=plan).exists():
-            return redirect('workout_payment', plan_id=plan.id)
-
-    steps = WorkoutStep.objects.filter(plan=plan)
-
-    # SAVE FEEDBACK
     if request.method == "POST":
         rating = request.POST.get('rating')
         comment = request.POST.get('comment')
@@ -1475,10 +1450,18 @@ def calculate_bmr(request):
     bmr_value = None
 
     if request.method == 'POST':
-        age = int(request.POST.get('age'))
-        gender = request.POST.get('gender')
-        height = float(request.POST.get('height'))
-        weight = float(request.POST.get('weight'))
+        try:
+            age = int(request.POST.get('age'))
+            gender = request.POST.get('gender')
+            height = float(request.POST.get('height'))
+            weight = float(request.POST.get('weight'))
+        except (TypeError, ValueError):
+            messages.error(request, 'Please enter valid numbers')
+            return redirect('calculate_bmr')
+
+        if age <= 0 or height <= 0 or weight <= 0:
+            messages.error(request, 'Age, height, and weight must be positive values')
+            return redirect('calculate_bmr')
 
         if gender == 'male':
             bmr_value = 10 * weight + 6.25 * height - 5 * age + 5
@@ -1501,41 +1484,6 @@ def calculate_bmr(request):
         'history': history
     })
 
-
-def newsletter_subscribe(request):
-    if request.method == 'POST':
-        email = request.POST.get('EMAIL', '')
-        if email:
-            try:
-                send_mail(
-                    subject='Welcome to NutriScan Newsletter!',
-                    message=(
-                        f'Hi,\n\n'
-                        f'Thank you for subscribing to NutriScan Newsletter!\n\n'
-                        f'This email confirms that your subscription has been activated. '
-                        f'You\'ll receive the latest health tips, diet plans, workout guides, '
-                        f'and exclusive offers right in your inbox.\n\n'
-                        f'Here\'s what you can expect:\n'
-                        f'  • Weekly nutrition & diet tips\n'
-                        f'  • Healthy recipe ideas\n'
-                        f'  • Exclusive discounts on diet plans\n'
-                        f'  • Motivational fitness content\n\n'
-                        f'Stay healthy and keep eating smart!\n\n'
-                        f'Best regards,\n'
-                        f'The NutriScan Team'
-                    ),
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=[email],
-                )
-                messages.success(request, f'Subscription confirmed! A welcome email has been sent to {email}.')
-            except Exception as e:
-                messages.error(request, 'Failed to send email. Please try again later.')
-        else:
-            messages.error(request, 'Please provide a valid email address.')
-
-    return redirect('index')
-
-
 def admin_feedbacks(request):
     if request.session.get('usertype') != 'admin':
         return redirect('login')
@@ -1549,5 +1497,32 @@ def admin_feedbacks(request):
     })
 
 
-def error_404(request, exception):
-    return render(request, '404.html', status=404)
+def logout_view(request):
+    request.session.flush()
+    messages.success(request, 'Logged out successfully')
+    return redirect('index')
+
+
+# --- ChatBot Web Integration ---
+def chatbot_web(request):
+    if request.session.get('usertype') != 'customer':
+        return redirect('login')
+    return render(request, 'customer/chatbot.html')
+
+def chatbot_ajax(request):
+    """AJAX endpoint: sends message text, gets bot response as JSON."""
+    message = request.POST.get('message', '').strip()
+    if not message:
+        return JsonResponse({'error': 'No message provided'}, status=400)
+
+    try:
+        from nutri_chatbot import process_message, _available
+        if not _available:
+            return JsonResponse({'error': 'ChatBot model not loaded'}, status=503)
+        response_text = process_message(message)
+        return JsonResponse({'response': response_text})
+    except Exception as e:
+        import traceback
+        print(f"[ChatBot AJAX] Error: {e}")
+        print(traceback.format_exc())
+        return JsonResponse({'error': str(e)}, status=500)
