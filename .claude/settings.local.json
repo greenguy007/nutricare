@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(mkdir -p C:/Users/HP/Downloads/Nutriscan/Nutriscan/nutri_project/static/images/footer)",
-      "Bash(cp \"C:/Users/HP/Downloads/New folder \\(4\\)/\"*.jpeg C:/Users/HP/Downloads/Nutriscan/Nutriscan/nutri_project/static/images/footer/)",
-      "Bash(python manage.py migrate)"
-    ]
-  }
-}
